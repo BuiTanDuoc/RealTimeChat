@@ -22,11 +22,14 @@ bld/
 [Oo]bj/
 [Ll]og/
 [Ll]ogs/
+uploads/
 
 # .NET Core
 project.lock.json
 project.fragment.lock.json
 artifacts/
+.vs/
+*.user
 
 # ASP.NET Scaffolding
 ScaffoldingReadMe.txt
@@ -38,6 +41,8 @@ ScaffoldingReadMe.txt
 
 # dotenv environment variables file
 .env
+dist
+node_modules
 
 # Others
 ~$*
@@ -55,3 +60,4 @@ CodeCoverage/
 *.VisualState.xml
 TestResult.xml
 nunit-*.xml
+
