@@ -1,10 +1,13 @@
 using System.Text;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.FileProviders;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using RealTimeChat.API.Hubs;
 using RealTimeChat.API.Middleware;
+using RealTimeChat.Application.Common;
+using RealTimeChat.Application.Interfaces;
 using RealTimeChat.Infrastructure;
 using RealTimeChat.Infrastructure.Persistence;
 
@@ -12,6 +15,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 var uploadsRoot = Path.Combine(builder.Environment.ContentRootPath, "uploads");
 Directory.CreateDirectory(uploadsRoot);
+
+// Request-body limits follow FileStorage:MaxFileSizeMB / MaxAvatarSizeMB (plus 1 MB for form overhead).
+var fileOpts = builder.Configuration.GetSection(FileStorageOptions.SectionName).Get<FileStorageOptions>() ?? new FileStorageOptions();
+var bodyLimit = Math.Max(fileOpts.MaxFileBytes, fileOpts.MaxAvatarBytes) + 1024 * 1024;
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = bodyLimit);
+builder.Services.Configure<FormOptions>(o => o.MultipartBodyLengthLimit = bodyLimit);
 
 builder.Services.AddInfrastructure(builder.Configuration, uploadsRoot);
 builder.Services.AddControllers();
@@ -92,7 +101,7 @@ if (app.Environment.IsDevelopment())
 
 app.UseCors("web");
 
-var imageExt = new[] { ".jpg", ".jpeg", ".png", ".gif", ".webp", ".bmp" };
+var storage = app.Services.GetRequiredService<IFileStorage>();
 app.UseStaticFiles(new StaticFileOptions
 {
     FileProvider = new PhysicalFileProvider(uploadsRoot),
@@ -103,7 +112,7 @@ app.UseStaticFiles(new StaticFileOptions
         h["X-Content-Type-Options"] = "nosniff";
         h["Cross-Origin-Resource-Policy"] = "cross-origin";
         // Only images render inline; everything else downloads.
-        if (!imageExt.Contains(Path.GetExtension(ctx.File.Name).ToLowerInvariant()))
+        if (!storage.IsImage(ctx.File.Name))
             h["Content-Disposition"] = "attachment";
     }
 });

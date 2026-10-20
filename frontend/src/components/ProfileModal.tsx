@@ -5,6 +5,8 @@ import * as yup from 'yup';
 import { Camera, LogOut } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, errorMessage } from '../lib/api';
+import { formatSize } from '../lib/helpers';
+import { useUploadConfig } from '../lib/uploadConfig';
 import { useAuth } from '../context/AuthContext';
 import type { User } from '../types';
 import Avatar from './Avatar';
@@ -16,6 +18,7 @@ export default function ProfileModal({ onClose }: { onClose(): void }) {
   const { user, setUser, logout } = useAuth();
   const [uploading, setUploading] = useState(false);
   const picker = useRef<HTMLInputElement>(null);
+  const cfg = useUploadConfig();
   const { register, handleSubmit, formState: { errors, isSubmitting, isDirty } } =
     useForm({ resolver: yupResolver(schema), defaultValues: { displayName: user?.displayName ?? '' } });
 
@@ -31,6 +34,7 @@ export default function ProfileModal({ onClose }: { onClose(): void }) {
 
   const upload = async (file?: File) => {
     if (!file) return;
+    if (file.size > cfg.maxAvatarSizeBytes) { toast.error(`Photo must be ${formatSize(cfg.maxAvatarSizeBytes)} or smaller.`); return; }
     setUploading(true);
     try {
       const form = new FormData();

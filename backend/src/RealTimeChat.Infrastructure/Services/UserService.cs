@@ -9,8 +9,6 @@ namespace RealTimeChat.Infrastructure.Services;
 
 public class UserService(AppDbContext db, IMapper mapper, IFileStorage storage, IPresenceTracker presence) : IUserService
 {
-    private const long MaxAvatarBytes = 5 * 1024 * 1024;
-
     public async Task<UserDto> GetAsync(Guid userId)
     {
         var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == userId)
@@ -57,8 +55,9 @@ public class UserService(AppDbContext db, IMapper mapper, IFileStorage storage, 
 
     public async Task<UserDto> UploadAvatarAsync(Guid userId, Stream content, string fileName)
     {
-        if (!storage.IsImage(fileName)) throw new AppException("Avatar must be an image (jpg, png, gif, webp).");
-        if (content.CanSeek && content.Length > MaxAvatarBytes) throw new AppException("Avatar must be 5 MB or smaller.");
+        if (!storage.IsImage(fileName)) throw new AppException($"Avatar must be an image ({string.Join(", ", (storage.Options.ImageExtensions ?? new()).DefaultIfEmpty(".jpg"))}).");
+        if (content.CanSeek && content.Length > storage.Options.MaxAvatarBytes)
+            throw new AppException($"Avatar must be {storage.Options.MaxAvatarSizeMB:0.##} MB or smaller.", 413);
 
         var user = await db.Users.FindAsync(userId) ?? throw new AppException("User not found.", 404);
         user.AvatarUrl = await storage.SaveAsync(content, fileName, "avatars");

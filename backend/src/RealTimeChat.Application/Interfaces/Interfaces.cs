@@ -1,3 +1,4 @@
+using RealTimeChat.Application.Common;
 using RealTimeChat.Application.DTOs;
 using RealTimeChat.Domain.Entities;
 
@@ -46,6 +47,11 @@ public interface IChatService
 
 public interface IFileStorage
 {
+    FileStorageOptions Options { get; }
+    /// <summary>Normalised (lower-case, leading dot). Empty = no whitelist.</summary>
+    IReadOnlyCollection<string> AllowedExtensions { get; }
+    IReadOnlyCollection<string> BlockedExtensions { get; }
+
     /// <returns>Public relative URL such as /uploads/files/abc.png</returns>
     Task<string> SaveAsync(Stream content, string originalFileName, string folder);
     bool IsImage(string fileName);

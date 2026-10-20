@@ -134,3 +134,11 @@ public class FriendRequestDto
     public DateTime CreatedAt { get; set; }
     public string Direction { get; set; } = "Incoming";   // Incoming | Outgoing
 }
+
+public class UploadConfigDto
+{
+    public long MaxFileSizeBytes { get; set; }
+    public long MaxAvatarSizeBytes { get; set; }
+    public List<string> AllowedExtensions { get; set; } = new();
+    public List<string> BlockedExtensions { get; set; } = new();
+}

@@ -3,14 +3,15 @@ import { FileText, Loader2, Paperclip, Send, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { api, errorMessage } from '../lib/api';
 import { formatSize } from '../lib/helpers';
+import { checkAttachment, useUploadConfig } from '../lib/uploadConfig';
 import { useChat } from '../context/ChatContext';
 import type { UploadResult } from '../types';
 
-const MAX_BYTES = 25 * 1024 * 1024;
 interface Pending { id: string; file: File; preview?: string }
 
 export default function MessageInput({ conversationId }: { conversationId: string }) {
   const { sendMessage, connected } = useChat();
+  const cfg = useUploadConfig();
   const [text, setText] = useState('');
   const [pending, setPending] = useState<Pending[]>([]);
   const [sending, setSending] = useState(false);
@@ -31,7 +32,8 @@ export default function MessageInput({ conversationId }: { conversationId: strin
   const addFiles = (files: File[]) => {
     const accepted: Pending[] = [];
     for (const file of files) {
-      if (file.size > MAX_BYTES) { toast.error(`${file.name} is larger than 25 MB.`); continue; }
+      const problem = checkAttachment(file, cfg);
+      if (problem) { toast.error(problem); continue; }
       accepted.push({
         id: Math.random().toString(36).slice(2),
         file,
@@ -118,7 +120,7 @@ export default function MessageInput({ conversationId }: { conversationId: strin
       )}
 
       <div className="flex items-end gap-2">
-        <input ref={picker} type="file" multiple hidden
+        <input ref={picker} type="file" multiple hidden accept={cfg.allowedExtensions.join(',') || undefined}
                onChange={(e) => { addFiles(Array.from(e.target.files ?? [])); e.target.value = ''; }} />
         <button className="icon-btn" onClick={() => picker.current?.click()} aria-label="Attach files"><Paperclip size={20} /></button>
         <textarea ref={area} rows={1} value={text} onChange={(e) => setText(e.target.value)}

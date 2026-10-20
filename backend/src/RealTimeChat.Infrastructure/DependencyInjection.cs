@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
+using RealTimeChat.Application.Common;
 using RealTimeChat.Application.Interfaces;
 using RealTimeChat.Application.Mappings;
 using RealTimeChat.Domain.Entities;
@@ -32,7 +34,9 @@ public static class DependencyInjection
         services.AddAutoMapper(typeof(MappingProfile));
 
         services.AddSingleton<IPresenceTracker, PresenceTracker>();
-        services.AddSingleton<IFileStorage>(new LocalFileStorage(uploadsRoot));
+        services.Configure<FileStorageOptions>(config.GetSection(FileStorageOptions.SectionName));
+        services.AddSingleton<IFileStorage>(sp =>
+            new LocalFileStorage(uploadsRoot, sp.GetRequiredService<IOptions<FileStorageOptions>>()));
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IAuthService, AuthService>();
         services.AddScoped<IUserService, UserService>();

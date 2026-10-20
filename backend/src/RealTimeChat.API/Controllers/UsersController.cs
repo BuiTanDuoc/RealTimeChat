@@ -21,7 +21,6 @@ public class UsersController(IUserService users) : ControllerBase
         Ok(await users.UpdateProfileAsync(User.GetUserId(), request));
 
     [HttpPost("me/avatar")]
-    [RequestSizeLimit(6 * 1024 * 1024)]
     public async Task<ActionResult<UserDto>> UploadAvatar(IFormFile file)
     {
         await using var stream = file.OpenReadStream();

@@ -65,6 +65,23 @@ npm run dev                 # http://localhost:5173
 
 Mở hai trình duyệt (hoặc một cửa sổ ẩn danh), đăng ký hai tài khoản và chat thử.
 
+## ⚙️ Cấu hình file upload
+
+Trong `backend/src/RealTimeChat.API/appsettings.json`, section `FileStorage`:
+
+| Khoá | Ý nghĩa |
+|---|---|
+| `MaxFileSizeMB` | Dung lượng tối đa của file đính kèm (cho phép số thập phân, ví dụ `0.5`) |
+| `MaxAvatarSizeMB` | Dung lượng tối đa của avatar |
+| `AllowedExtensions` | Danh sách trắng cho file đính kèm, ví dụ `[".pdf", ".docx", ".png"]`. Để `[]` = cho phép mọi loại không bị chặn |
+| `BlockedExtensions` | Luôn bị từ chối (mặc định: file thực thi, script, HTML/SVG). Nếu khai báo thì thay thế danh sách mặc định |
+| `ImageExtensions` | Đuôi được hiển thị như ảnh và dùng được làm avatar |
+
+Đuôi file không phân biệt hoa/thường và có hoặc không có dấu chấm đều được. Giới hạn dung lượng của Kestrel và form
+tự điều chỉnh theo cấu hình. Frontend lấy các giới hạn này từ `GET /api/files/config` để báo lỗi ngay trước khi upload
+và lọc hộp chọn file, nên không cần sửa code frontend. Server vẫn kiểm tra lại mọi upload. Sau khi đổi cấu hình, khởi
+động lại backend. Nếu đặt dung lượng lớn, nhớ kiểm tra giới hạn của reverse proxy (ví dụ nginx `client_max_body_size`, IIS `maxAllowedContentLength`).
+
 ## 🧱 Cấu trúc
 
 ```
@@ -86,7 +103,7 @@ frontend/src
 |---|---|---|
 | POST | `/api/auth/register`, `/login`, `/refresh`, `/logout` | Xác thực |
 | GET/PUT | `/api/users/me` | Hồ sơ của tôi |
-| POST | `/api/users/me/avatar` | Tải avatar (≤ 5 MB, ảnh) |
+| POST | `/api/users/me/avatar` | Tải avatar (ảnh, giới hạn theo `FileStorage`) |
 | GET | `/api/users/search?q=` | Tìm người dùng |
 | GET | `/api/conversations` | Danh sách chat (kèm tin cuối, số chưa đọc) |
 | POST | `/api/conversations/private`, `/group` | Tạo chat riêng / nhóm |
@@ -96,7 +113,8 @@ frontend/src
 | POST | `/api/friends/requests/{id}/accept` | Chấp nhận lời mời |
 | DELETE | `/api/friends/requests/{id}` | Từ chối (người nhận) hoặc huỷ (người gửi) |
 | DELETE | `/api/friends/{userId}` | Huỷ kết bạn |
-| POST | `/api/files/upload` | Tải file đính kèm (≤ 25 MB) |
+| GET | `/api/files/config` | Giới hạn upload hiện hành (dung lượng, loại file) |
+| POST | `/api/files/upload` | Tải file đính kèm (giới hạn theo `FileStorage`) |
 
 **Hub `/hubs/chat`**: client gọi `SendMessage`, `MarkAsRead`; server phát `ReceiveMessage`, `MessageStatus`,
 `ConversationRead`, `ConversationCreated`, `FriendRequestReceived`, `FriendRequestAccepted`, `FriendRequestRemoved`, `FriendRemoved`, `OnlineUsers`, `UserOnline`, `UserOffline`.
